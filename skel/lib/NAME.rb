@@ -1,2 +1,2 @@
 
-require 'NAME/anyfile'
+require '<%= @name %>/anyfile'
