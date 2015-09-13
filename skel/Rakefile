@@ -1,0 +1,10 @@
+
+require 'rdoc/task'
+
+RDoc::Task.new do |rdoc|
+	rdoc.main = 'README.rdoc'
+	rdoc.rdoc_dir = 'generated/api-doc'
+	rdoc.rdoc_files.include('README.rdoc', 'lib/**/*.rb')
+	rdoc.options << '--visibility=public'
+end
+
