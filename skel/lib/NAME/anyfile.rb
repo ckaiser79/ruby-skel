@@ -1,0 +1,4 @@
+
+module <%= @nameOfModule %>
+
+end

@@ -3,33 +3,42 @@ require 'rubygems'
 require 'bundler/setup'
 
 class Main
-	def initialize argv
+  def initialize argv
 
 
-		@options = {}
+    @options = {}
 
-		p = OptionParser.new do |opts|
+    argv << "-h" if argv.empty?
 
-			
+    p = OptionParser.new do |opts|
+      opts.banner = "Usage: <%= @name %> [options]"
 
-		end
+      opts.on("-v", "--[no-]verbose", "Run verbosely") do |v|
+        options[:verbose] = v
+      end
 
-		begin
-			p.parse! argv
-		rescue => e
-			puts p
-			puts e
-			exit 2
-		end
+      opts.on("-h", "--help", "Show this message") do |v|
+        puts opts
+        exit 2
+      end
 
-	end
+    end
 
-	def run
-		puts @options
-		puts ARGV
-	end
+    begin
+      p.parse! argv
+    rescue => e
+      puts p
+      puts e
+      exit 2
+    end
+
+  end
+
+  def run
+    puts @options
+    puts ARGV
+  end
 end
-
 
 Main.new(ARGV).run
 

@@ -1,5 +1,7 @@
 source 'https://rubygems.org'
 
-gem 'optparse'
+# tests
 gem 'rspec'
 
+# productive
+gem 'optparse'
