@@ -1,4 +1,2 @@
 
-module <%= @nameOfModule %>
-
-end
+<%= "module " + @nameOfModule + "\n\nend" %>

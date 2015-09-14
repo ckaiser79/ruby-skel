@@ -4,6 +4,36 @@ require 'rubygems'
 require 'bundler/setup'
 
 require 'find'
+require 'optparse'
+require 'fileutils'
+require 'erb'
+
+class MergeController
+
+  attr_accessor :name
+
+  #
+  # foo-bar-aBc become FooBarAbc
+  #
+  def toCamelCase name
+    a = name.split /-/
+    r = ''
+
+    a.each do |item|
+      r += item.capitalize
+    end
+
+    r
+  end
+
+  def index
+    @nameOfModule = toCamelCase @name
+  end
+
+  def getBinding # this is only a helper method to access the objects binding method
+    binding
+  end
+end
 
 class Main
   def initialize argv
@@ -13,35 +43,38 @@ class Main
     argv << "-h" if argv.empty?
 
     p = OptionParser.new do |opts|
-      opts.banner = "Usage: set-name.rb [options]"
+      opts.banner = %{
+Usage: set-name.rb [options]
+Create a project skeleton for ruby projects
+      }
 
-      opts.on("-v", "--[no-]verbose", "Run verbosely") do |v|
-        options[:verbose] = v
+      opts.on("-v", "--[no-]verbose", "run verbosely") do |v|
+        @options[:verbose] = v
       end
 
       @options[:name] = 'default'
-      opts.on("-n", "--name NAME", "name of project") do |v|
-        options[:name] = v
+      opts.on("-n", "--name NAME", "name of project [" + @options[:name] + "]") do |v|
+        @options[:name] = v
       end
 
       @options[:merge] = true
-      opts.on("-e", "--[no-]merge", "name of project") do |v|
-        options[:merge] = v
+      opts.on("-e", "--[no-]merge", "merge of textfiles after copy, default true") do |v|
+        @options[:merge] = v
       end
 
       @options[:rename] = true
-      opts.on("-r", "--[no-]rename", "name of project") do |v|
-        options[:rename] = v
+      opts.on("-r", "--[no-]rename", "rename files after copy, default true") do |v|
+        @options[:rename] = v
       end
 
       @options[:targetdir] = 'target'
-      opts.on("-t", "--target DIR", "Directory where files should be copied to") do |v|
-        options[:targetdir] = v
+      opts.on("-t", "--target DIR", "directory where files should be copied to") do |v|
+        @options[:targetdir] = v
       end
 
-      @options[:skeldir] = '../skel'
+      @options[:skeldir] = './skel'
       opts.on("-s", "--skel DIR", "Directory where files are located") do |v|
-        options[:skeldir] = v
+        @options[:skeldir] = v
       end
 
       opts.on("-h", "--help", "Show this message") do |v|
@@ -68,12 +101,15 @@ class Main
     # 3. replace variables in files
     #
 
+    FileUtils.mkdir_p @options[:targetdir]
     FileUtils.cp_r @options[:skeldir] + '/.', @options[:targetdir]
+
 
     files = findFilesNeedsRenaming
     files.each do |file|
       renameFile file
     end
+
 
     findAndMergeTemplates
 
@@ -83,22 +119,29 @@ class Main
 
   def renameFile file
 
-    match = /(.*)(#{@options[:name]})(.*)/.match file
+    match = /(.*)(NAME)(.*)/.match file
 
-    if match.nil?
-      newFileName = file
-    else
+    if not match.nil?
+
       newFileName = match[1] + @options[:name] + match[3]
+
+      log :info, "rename " + file.to_s + " to " + newFileName
+      begin
+        FileUtils.mv file, newFileName if @options[:rename]
+      rescue => e
+        log :warn, e
+      end
+
+
     end
 
-    newFileName
   end
 
   def findFilesNeedsRenaming
     files = []
 
     Find.find @options[:targetdir] do |file|
-      files.push file if file.contains? @options[:name]
+      files.push file if file.include? 'NAME'
     end
 
     files.reverse
@@ -106,62 +149,58 @@ class Main
 
   def findAndMergeTemplates
     Find.find @options[:targetdir] do |file|
-      mergeTemplate file
+      mergeTemplate file if textfile? file
     end
   end
 
   def mergeTemplate templateFile
-    if textfile? templateFile
 
+    log :info, "merge " + templateFile
 
+    if @options[:merge]
       content = IO.read templateFile
-      renderer = ERB.new content
 
-      mergedContent = doRender renderer, content
+      mergedContent = doRender content
       IO.write templateFile, mergedContent
-
-
     end
   end
 
-  def doRender renderer, content
+  def doRender content
 
-    # variables for erb template
-    name = @options[:name]
-    nameOfModule = toCamelCase @options[:name]
+    controller = MergeController.new
+    controller.name = @options[:name]
+    controller.index
 
-    renderer.result
+    renderer = ERB.new content
+
+    renderer.result controller.getBinding
   end
 
   def textfile? file
-    matched = file.file?
 
-    matched = matched && file.name.fnmatch?('*.rb')
-    matched = matched && file.name.fnmatch?('*.md')
-    matched = matched && file.name.fnmatch?('README*')
-    matched = matched && file.name.fnmatch?('LICENSE')
-    matched = matched && file.name.fnmatch?('*.txt')
-    matched = matched && file.name.fnmatch?('Gemfile')
-    matched = matched && file.name.fnmatch?('Rakefile')
-    matched = matched && file.name.fnmatch?('*.gemspec')
-    matched = matched && file.name.fnmatch?('*.yaml')
-    matched = matched && file.name.fnmatch?('*.yml')
+    matched = File.file? file
+
+    if matched
+      matched = matched || File.fnmatch?(file, '*.rb')
+      matched = matched || File.fnmatch?(file, '*.md')
+      matched = matched || File.fnmatch?(file, 'README*')
+      matched = matched || File.fnmatch?(file, 'LICENSE')
+      matched = matched || File.fnmatch?(file, '*.txt')
+      matched = matched || File.fnmatch?(file, 'Gemfile')
+      matched = matched || File.fnmatch?(file, 'Rakefile')
+      matched = matched || File.fnmatch?(file, '*.gemspec')
+      matched = matched || File.fnmatch?(file, '*.yaml')
+      matched = matched || File.fnmatch?(file, '*.yml')
+    end
 
     matched
   end
 
-  #
-  # foo-bar-aBc become FooBarAbc
-  #
-  def toCamelCase name
-    a = name.split /-/
-    r = ''
+  def log type, message
 
-    a.each do |item|
-      r += item.capitalize
-    end
+    puts message.to_s if @options[:verbose] && type == :info
+    puts "Warn: " + message.to_s if type == :warn
 
-    r
   end
 
 end
