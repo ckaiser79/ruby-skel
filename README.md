@@ -5,7 +5,7 @@ A skeleton for creating ruby projects
 # Usage
 
 ```
-./set-name foo /tmp/target
+./set-name -n foo -d /tmp/target
 ```
 # License
 
