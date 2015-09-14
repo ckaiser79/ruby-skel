@@ -17,6 +17,13 @@ Create a project skeleton for ruby projects
     -h, --help                       Show this message
 
 ```
+
+## Simple example
+
+```
+./set-name -n foo-bar -v
+```
+
 # License
 
 This program is licensed under the MIT license. See LICENSE for details.
