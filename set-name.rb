@@ -24,6 +24,16 @@ class Main
         options[:name] = v
       end
 
+      @options[:merge] = true
+      opts.on("-e", "--[no-]merge", "name of project") do |v|
+        options[:merge] = v
+      end
+
+      @options[:rename] = true
+      opts.on("-r", "--[no-]rename", "name of project") do |v|
+        options[:rename] = v
+      end
+
       @options[:targetdir] = 'target'
       opts.on("-t", "--target DIR", "Directory where files should be copied to") do |v|
         options[:targetdir] = v
