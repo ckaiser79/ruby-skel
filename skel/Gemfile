@@ -1,14 +1,3 @@
 source 'https://rubygems.org'
 
-# documentation, apidoc
-gem "github/markup"
-gem "redcarpet"
-gem "yard"
-gem "yard/rake/yardoc_task"
-
-# tests
-gem 'rspec'
-
-# productive
-gem 'optparse'
-
+gemspec

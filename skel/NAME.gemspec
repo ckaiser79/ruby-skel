@@ -17,4 +17,8 @@ Gem::Specification.new do |spec|
   spec.executables   = ['bin/<%= @name %>']
   spec.test_files    = ['spec/<%= @name %>_spec.rb']
   spec.require_paths = ["lib"]
+  
+  spec.add_development_dependency "bundler"
+  spec.add_development_dependency "rake"
+  spec.add_development_dependency "rspec"  
 end
